@@ -27,6 +27,7 @@ class ExtractResponse(BaseModel):
     data: dict
     model: str
     tokens_generated: int
+    error: str | None = None
 
 
 def call_llm(prompt: str, timeout: int = 300) -> tuple[dict, int]:
@@ -72,5 +73,28 @@ def extract(req: ExtractRequest):
         f"TEXTO:\n{req.text}\n\n"
         "Responde solo el JSON."
     )
-    data, tokens = call_llm(prompt)
+    try:
+        data, tokens = call_llm(prompt)
+    except Exception as e:
+        return ExtractResponse(data={}, model=LLM_MODEL, tokens_generated=0, error=str(e)[:300])
     return ExtractResponse(data=data, model=LLM_MODEL, tokens_generated=tokens)
+
+
+@app.post("/extract/batch", response_model=list[ExtractResponse])
+async def extract_batch(reqs: list[ExtractRequest]):
+    """Procesa N documentos en paralelo (Ollama encola; OLLAMA_NUM_PARALLEL=3 lo paraleliza real)."""
+    import asyncio
+
+    async def one(r: ExtractRequest) -> ExtractResponse:
+        prompt = (
+            f"Extrae estos campos: {r.schema_hint}\n\n"
+            f"TEXTO:\n{r.text}\n\n"
+            "Responde solo el JSON."
+        )
+        try:
+            data, tokens = await asyncio.to_thread(call_llm, prompt)
+            return ExtractResponse(data=data, model=LLM_MODEL, tokens_generated=tokens)
+        except Exception as e:
+            return ExtractResponse(data={}, model=LLM_MODEL, tokens_generated=0, error=str(e)[:300])
+
+    return await asyncio.gather(*[one(r) for r in reqs])
