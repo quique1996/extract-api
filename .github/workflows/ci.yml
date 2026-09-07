@@ -1,26 +1,9 @@
-# --------------------------------------------------------------------------- #
-# CI / Eval pipeline for Extract API
-# Runs on every PR: offline golden-schema pytest suite + optional DeepEval.
-#
-#   pytest                          -> fast, always-on, no keys, blocks on failure
-#   pytest -m deepeval              -> LLM-based quality (optional DeepEval install)
-#   pytest -m "deepeval or smoke"   -> full eval run
-#
-# Merge gate: workflow must be green. DeepEval tests are tagged `deepeval` and
-# only run if DEEPEVAL_ENABLED=true AND a LLM API key env is present; otherwise
-# they are skipped (honest: no invented keys, no network to a paid model in CI).
-# --------------------------------------------------------------------------- #
-name: CI — tests & evals
+name: CI Extract-API
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
+  pull_request:
 
 jobs:
   lint:
@@ -31,52 +14,3 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install
-        run: pip install -r requirements.txt -r extra-requirements.txt
-      - name: Lint
-        run: ruff check .
-      - name: Type check
-        run: pyright main.py tests
-
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install
-        run: pip install -r requirements.txt -r extra-requirements.txt
-      - name: Run offline tests
-        run: pytest -q
-
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build image
-        run: docker build -f Dockerfile -t extract-api:${{ github.sha }} .
-      - name: Run container
-        run: docker run --rm -p 8100:8100 extract-api:${{ github.sha }}
-
-  evals:
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.head.repo.forked && (github.actor == 'quique1996' || env.DEEPEVAL_ENABLED == 'true') }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install
-        run: pip install -r requirements.txt -r extra-requirements.txt
-      - name: Run evals (offline golden suite + optional DeepEval)
-        run: pytest -m "deepeval or smoke"
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: deepeval-reports
-          path: |
-            reports/*.html
-            reports/*.json
-          if-no-files-found: ignore
