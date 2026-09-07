@@ -1,0 +1,18 @@
+# Local Ollama inference backend (host side).
+# Hosts Ollama and maps its /v1 to localhost:11434 so the API container (which
+# reaches the host network via host-gateway) can call it. No model pulling here.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - /Users/quiquebs/.ollama:/root/.ollama
+    expose:
+      - "11434"
+    # Tune iGPU acceleration on a real GPU host (the Geekom node):
+    #   OLLAMA_VULKAN=1 OLLAMA_IGPU_ENABLE=1 OLLAMA_FLASH_ATTENTION=1
+    #       OLLAMA_KV_CACHE_TYPE=q8_0
+    # restart: unless-stopped
+
+networks:
+  default:
+    name: extract-api

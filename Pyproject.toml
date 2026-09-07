@@ -1,0 +1,27 @@
+[project]
+name = "extract-api"
+version = "0.1.0"
+description = "LLM-powered structured extraction service (FastAPI + Ollama)"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+markers = [
+    "deepeval: LLM-based quality evals (require DeepEval install + LLM API key). Skipped unless DEEPEVAL_ENABLED=true.",
+    "smoke: lightweight endpoint smoke checks.",
+]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["main.py", "tests"]
+reportMissingImports = false
+reportMissingModuleSource = true

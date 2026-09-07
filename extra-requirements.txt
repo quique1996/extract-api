@@ -1,0 +1,11 @@
+# Test-time extra deps (installed in CI and optionally locally).
+# Not required for `pip install -r requirements.txt` — the core API runs with the base set.
+-r requirements.txt
+
+pytest>=8.0
+ruff>=0.6
+pyright>=1.1
+
+# LLM-based quality evals (optional, gated behind DEEPEVAL_ENABLED=true):
+# Requires an external LLM API key env at runtime (we NEVER bake keys in).
+#deepeval>=1.0
