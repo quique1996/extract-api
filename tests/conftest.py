@@ -10,6 +10,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+import main
 from main import call_llm
 
 # Golden lead fixture
@@ -44,29 +45,18 @@ def _replace_llm(monkeypatch: pytest.MonkeyPatch):
         payload, tokens = golden_payload(), 279
         return payload, tokens
 
-    monkeypatch.setattr(call_llm, "__wrapped__", None)
-    monkeypatch.setattr(call_llm, "__name__", "call_llm_fake")
     monkeypatch.setattr(main, "call_llm", fake_call_llm)
 
 
 @pytest.fixture
 def client():
-    """A TestClient for the app under test (fake LLM active via autouse fixture)."""
-    return TestClient(get_app())
+    """A TestClient for the real app (fake LLM active via autouse fixture)."""
+    from main import app
+
+    return TestClient(app)
 
 
 def get_app():
-    from fastapi import FastAPI
-    from main import extract, extract_batch, health
+    from main import app
 
-    app = FastAPI(title="Extract API (test)", version="0.1.0-test")
-    app.add_api_route(
-        "/extract", extract, name="extract", response_model=None
-    )
-    app.add_api_route(
-        "/extract/batch", extract_batch, name="extract-batch", response_model=None
-    )
-    app.add_api_route(
-        "/health", health, name="health", response_model=None
-    )
     return app

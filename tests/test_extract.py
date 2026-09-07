@@ -4,6 +4,8 @@ Deterministic (fake LLM) and marker-tagged `smoke` so the CI `pytest -q` job
 collects them while a marker-only invocation (`pytest -m deepeval`) leaves them
 alone. No API key / live inference required.
 """
+import pytest
+
 from tests.conftest import EXPECTED_LEAD, LEAD_SCHEMA, LEAD_TEXT
 
 
