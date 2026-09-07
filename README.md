@@ -59,7 +59,28 @@ Response:
 | Route | Method | Description |
 |---|---|---|
 | `/extract` | POST | Extract structured JSON from text. Body: `text`, `schema_hint`, optional `strict` |
+| `/extract/batch` | POST | Extract N documents in parallel (asyncio) |
 | `/health` | GET | Service + LLM status |
+
+## Testing & CI
+
+Deterministic **offline golden-schema** suite runs on every PR in CI and locally — no API key or live model needed. The LLM is swapped for a fixture (`tests/conftest.py`), so extraction quality is verified against golden JSON, not a network call.
+
+```bash
+# local (venv_geekom already has deps, or create any venv and `pip install -r requirements.txt -r extra-requirements.txt`)
+pytest -q
+```
+
+| Command | What |
+|---|---|
+| `pytest -q` | offline golden cases (schema completeness, types, batch, validation, graceful error handling) — always on |
+| `pytest -m "deepeval or smoke"` | optional LLM quality evals (DeepEval); only runs with `DEEPEVAL_ENABLED=true` + a key env, otherwise skipped |
+
+GitHub Actions (`.github/workflows/ci.yml`) gates merges with: lint (`ruff` + `pyright`), fast unit-tests, `docker build`/run, and evals (offline + optional DeepEval).
+
+## Dev & Docker
+
+- **Local run** (host Ollama as backend): `docker compose -f docker-compose.local.yml up --build`.
 
 ## Ops (Geekom node)
 
@@ -74,7 +95,6 @@ journalctl -u extract-api -f
 
 ## Roadmap
 
-- [ ] Batch endpoint (`/extract/batch`) — parallelize N documents across CPU cores while the iGPU streams
 - [ ] Pydantic schema → prompt compiler (typed schemas instead of free-text hints)
 - [ ] Webhook trigger from Telegram bot (lead capture on the go)
-- [ ] RAGAS-style eval set for extraction accuracy
+- [ ] RAGAS-style / DeepEval extraction accuracy set (see TESTING.md → Testing/Feedback)

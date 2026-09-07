@@ -1,4 +1,14 @@
+# Test artifacts never leave the repo.
+reports/
 __pycache__/
-venv*
 *.pyc
-.env
+.coverage
+htmlcov/
+.deepeval_cache/
+Dockerfile.local
+*.sqlite
+.ollama_models/
+.venv-test/
+.venv_geekom/
+build/
+dist/
